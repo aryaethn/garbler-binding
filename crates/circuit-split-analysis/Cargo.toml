@@ -1,0 +1,24 @@
+[package]
+name = "circuit-split-analysis"
+version = "0.1.0"
+edition = "2021"
+description = "Step 2: does the real BN254 Groth16 verifier circuit contain an exploitable affine split near its output?"
+license = "MIT"
+
+[dependencies]
+garbled-snark-verifier = { path = "../../vendor/garbled-snark-verifier", default-features = false }
+ark-bn254 = "0.5.0"
+ark-ec = "0.5.0"
+ark-ff = "0.5.0"
+ark-groth16 = "0.5.0"
+ark-relations = "0.5.1"
+ark-snark = "0.5.1"
+ark-std = "0.5.0"
+rand = "0.8"
+rand_chacha = "0.3"
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

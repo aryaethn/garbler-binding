@@ -1,0 +1,49 @@
+
+ZRE15 half-gates + free-XOR, parameterized by label length k.
+Implementation follows eprint 2014/756 Figure 2 line by line.
+
+=== VALIDATION (exhaustive over all inputs) ===
+  split: (a AND b) XOR (c AND d)         k=16   correct=YES
+  split: (a AND b) XOR (c AND d)         k=32   correct=YES
+  split: (a AND b) XOR (c AND d)         k=64   correct=YES
+  split: (a AND b) XOR (c AND d)         k=128  correct=YES
+  cancel: ((a XOR b) AND c) XOR d        k=16   correct=YES
+  cancel: ((a XOR b) AND c) XOR d        k=32   correct=YES
+  cancel: ((a XOR b) AND c) XOR d        k=64   correct=YES
+  cancel: ((a XOR b) AND c) XOR d        k=128  correct=YES
+
+=== ATTACK 1: ZRE15 native De never returns bottom ===
+  Attack 1  k=32   FORGED in 1 trial(s). Garbage labels decode to True under ZRE15's native De.
+            committed-De verdict on the same label: None
+  Attack 1  k=64   FORGED in 1 trial(s). Garbage labels decode to True under ZRE15's native De.
+            committed-De verdict on the same label: None
+  Attack 1  k=128  FORGED in 3 trial(s). Garbage labels decode to True under ZRE15's native De.
+            committed-De verdict on the same label: None
+
+=== ATTACK 3: XOR cancellation is evaluation-invariant ===
+  Attack 3  k=32   identical=true  L_0 off-manifold=true  L_1 off-manifold=true  decoded=Some(true)
+  Attack 3  k=64   identical=true  L_0 off-manifold=true  L_1 off-manifold=true  decoded=Some(true)
+  Attack 3  k=128  identical=true  L_0 off-manifold=true  L_1 off-manifold=true  decoded=Some(true)
+
+=== ATTACK 4: birthday on the split structure ===
+  target = Z^True, committed-De decoding, forged labels off-manifold
+
+  k          H evals        2^(k/2)            2^k    found   off-mf   decodes
+  24           20722        4.096e3        1.678e7     true     true Some(true)
+  28          105924        1.638e4        2.684e8     true     true Some(true)
+  32          280360        6.554e4        4.295e9     true     true Some(true)
+  36         1170344        2.621e5       6.872e10     true     true Some(true)
+  40         4349874        1.049e6       1.100e12     true     true Some(true)
+  44        24420688        4.194e6       1.759e13     true     true Some(true)
+
+=== HEAD TO HEAD: birthday vs naive search, same k, same target ===
+
+  k         birthday H          naive H      speedup
+  20              5702          1160196         203x
+  24             20722         36204000        1747x
+  28            105924        345161504        3259x
+
+=== EXTRAPOLATION ===
+  measured scaling exponent over k=24..44: 1.02 (birthday predicts 1.00)
+  at k=128, as deployed by BitVM3-core: 2^64 hash evaluations
+  at ~1e9 H/core-second: ~585 core-years, ~3 weeks on 10k cores

@@ -1,0 +1,36 @@
+
+=== Step 2: affine-split analysis of the BN254 Groth16 verifier ===
+
+running the real verifier circuit with dependency sketches
+(one full streaming pass over ~10.4e9 gates; this takes a while)
+
+input wires:            3302
+gates executed:         10338696819
+non-free gates:         2714835821
+output wire:            116695
+output sketch popcount: 64/64
+
+--- linear frontier of the output ---
+backward steps through free gates: 1
+frontier atoms (odd parity):       1
+unresolved wires (fell out of ring): 0
+  atom #2714835820   sketch popcount 64/64
+
+--- split test ---
+VERDICT: no XOR split at the output. The output is a single
+         non-free gate, so the top-level birthday attack of
+         Attack 4 does not apply directly. See below.
+
+--- one level deeper: the top non-free gate ---
+last non-free gate: atom #2714835820
+  operand A sketch popcount 64/64
+  operand B sketch popcount 64/64
+  A-exclusive classes: 0x0000000000000000
+  B-exclusive classes: 0x0000000000000000
+  -> no mutually exclusive classes: no birthday at this gate
+
+--- how deep before a separable gate appears? ---
+non-free gates in recorded tail: 638658
+of those, with separably controllable operands: 0
+none found anywhere in the recorded tail
+

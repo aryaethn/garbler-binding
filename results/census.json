@@ -1,0 +1,589 @@
+{
+  "anchor": {
+    "name": "bn254_groth16_verifier",
+    "nonfree": 2715041234,
+    "source": "garbled-snark-verifier examples/groth16_gc_gate_count, k=6, uncompressed"
+  },
+  "measurements": [
+    {
+      "breakdown": [
+        243,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1328,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 1328,
+      "name": "gf2_32_mul_karatsuba",
+      "nonfree": 243,
+      "note": "GF(2^k) multiplication, Karatsuba. Same non-free count as a Wiedemann binary tower.",
+      "total": 1571,
+      "unit_label": "bit of field element",
+      "unit_size": 32,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        1024,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1085,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 1085,
+      "name": "gf2_32_mul_schoolbook",
+      "nonfree": 1024,
+      "note": "GF(2^k) multiplication, schoolbook. Shown to quantify what Karatsuba buys.",
+      "total": 2109,
+      "unit_label": "bit of field element",
+      "unit_size": 32,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        729,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4116,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 4116,
+      "name": "gf2_64_mul_karatsuba",
+      "nonfree": 729,
+      "note": "GF(2^k) multiplication, Karatsuba. Same non-free count as a Wiedemann binary tower.",
+      "total": 4845,
+      "unit_label": "bit of field element",
+      "unit_size": 64,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        4096,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4221,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 4221,
+      "name": "gf2_64_mul_schoolbook",
+      "nonfree": 4096,
+      "note": "GF(2^k) multiplication, schoolbook. Shown to quantify what Karatsuba buys.",
+      "total": 8317,
+      "unit_label": "bit of field element",
+      "unit_size": 64,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        2187,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        12608,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 12608,
+      "name": "gf2_128_mul_karatsuba",
+      "nonfree": 2187,
+      "note": "GF(2^k) multiplication, Karatsuba. Same non-free count as a Wiedemann binary tower.",
+      "total": 14795,
+      "unit_label": "bit of field element",
+      "unit_size": 128,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        508,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 508,
+      "name": "gf2_128_square",
+      "nonfree": 0,
+      "note": "Frobenius is GF(2)-linear. Expect exactly 0 non-free gates.",
+      "total": 508,
+      "unit_label": "bit of field element",
+      "unit_size": 128,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7935,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 7935,
+      "name": "gf2_128_mul_const",
+      "nonfree": 0,
+      "note": "Multiplication by a fixed constant is GF(2)-linear. Expect 0 non-free gates. This is why FRI folding coefficients and NTT twiddles are free in a binary field.",
+      "total": 7935,
+      "unit_label": "bit of field element",
+      "unit_size": 128,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        7533,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        45136,
+        0,
+        0
+      ],
+      "family": "binary_field",
+      "free": 45136,
+      "name": "gf2_32_inv_naive_chain",
+      "nonfree": 7533,
+      "note": "Square-and-multiply over 2^k-2. All squarings free, so cost = (k-1) multiplications. Itoh-Tsujii reduces this to ~log2(k)+hw(k-1)-1 multiplications without changing the per-multiplication price.",
+      "total": 52669,
+      "unit_label": "bit of field element",
+      "unit_size": 32,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        95,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        346,
+        0,
+        0
+      ],
+      "family": "prime_field",
+      "free": 346,
+      "name": "m31_add",
+      "nonfree": 95,
+      "note": "M31 = 2^31-1 modular addition. Carry chain plus a conditional subtract.",
+      "total": 441,
+      "unit_label": "bit of field element",
+      "unit_size": 31,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        2513,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4593,
+        0,
+        0
+      ],
+      "family": "prime_field",
+      "free": 4593,
+      "name": "m31_mul",
+      "nonfree": 2513,
+      "note": "M31 modular multiplication with the Mersenne fold. Compare against gf2_32_mul.",
+      "total": 7106,
+      "unit_label": "bit of field element",
+      "unit_size": 31,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        194,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        709,
+        0,
+        0
+      ],
+      "family": "prime_field",
+      "free": 709,
+      "name": "goldilocks_add",
+      "nonfree": 194,
+      "note": "Goldilocks = 2^64-2^32+1 modular addition.",
+      "total": 903,
+      "unit_label": "bit of field element",
+      "unit_size": 64,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        10980,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        21034,
+        0,
+        0
+      ],
+      "family": "prime_field",
+      "free": 21034,
+      "name": "goldilocks_mul",
+      "nonfree": 10980,
+      "note": "Goldilocks modular multiplication with the standard fast reduction. Compare against gf2_64_mul.",
+      "total": 32014,
+      "unit_label": "bit of field element",
+      "unit_size": 64,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        22696,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        98976,
+        0,
+        0
+      ],
+      "family": "hash",
+      "free": 98976,
+      "name": "sha256_compression",
+      "nonfree": 22696,
+      "note": "One SHA-256 compression (single-block message). Validated against RustCrypto sha2. Cost is dominated by 32-bit addition carries, not by Ch/Maj.",
+      "total": 121672,
+      "unit_label": "byte of rate",
+      "unit_size": 64,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        10416,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        49344,
+        0,
+        0
+      ],
+      "family": "hash",
+      "free": 49344,
+      "name": "blake3_compression",
+      "nonfree": 10416,
+      "note": "One BLAKE3 compression (single-chunk root hash). Validated against the blake3 crate. Pure ARX: every non-free gate is an addition carry.",
+      "total": 59760,
+      "unit_label": "byte of rate",
+      "unit_size": 64,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        0,
+        0,
+        38400,
+        0,
+        0,
+        0,
+        0,
+        0,
+        115286,
+        0,
+        0
+      ],
+      "family": "hash",
+      "free": 115286,
+      "name": "keccak_f1600",
+      "nonfree": 38400,
+      "note": "One Keccak-f[1600] permutation via Keccak-256 of a short message. Validated against tiny-keccak. Theta/rho/pi/iota are all free; only chi costs, at exactly 1600 non-free gates per round for 24 rounds.",
+      "total": 153686,
+      "unit_label": "byte of rate",
+      "unit_size": 136,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        600,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        165114,
+        0,
+        0
+      ],
+      "family": "low_and_primitive",
+      "free": 165114,
+      "name": "lowmc_128_m10_r20",
+      "nonfree": 600,
+      "note": "LowMC. Linear layer is a full binary matrix multiply and costs zero. Non-free count is exactly 3*m*r. See the cryptanalytic caveat in gadgets/lowmc.rs before quoting this as a recommendation.",
+      "total": 165714,
+      "unit_label": "byte of block",
+      "unit_size": 16,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        546,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1492337,
+        0,
+        0
+      ],
+      "family": "low_and_primitive",
+      "free": 1492337,
+      "name": "lowmc_128_m1_r182",
+      "nonfree": 546,
+      "note": "LowMC. Linear layer is a full binary matrix multiply and costs zero. Non-free count is exactly 3*m*r. See the cryptanalytic caveat in gadgets/lowmc.rs before quoting this as a recommendation.",
+      "total": 1492883,
+      "unit_label": "byte of block",
+      "unit_size": 16,
+      "verified": true
+    },
+    {
+      "breakdown": [
+        1140,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1247790,
+        0,
+        0
+      ],
+      "family": "low_and_primitive",
+      "free": 1247790,
+      "name": "lowmc_256_m10_r38",
+      "nonfree": 1140,
+      "note": "LowMC. Linear layer is a full binary matrix multiply and costs zero. Non-free count is exactly 3*m*r. See the cryptanalytic caveat in gadgets/lowmc.rs before quoting this as a recommendation.",
+      "total": 1248930,
+      "unit_label": "byte of block",
+      "unit_size": 32,
+      "verified": true
+    }
+  ],
+  "models": [
+    {
+      "assumptions": [
+        "Binary field GF(2^128) used directly as the challenge field; no extension needed.",
+        "100 queries at rate 1/2 targets roughly 100-bit soundness.",
+        "Merkle leaves hold 8 field elements."
+      ],
+      "garbled_bytes": 21978038400,
+      "name": "binary_field_FRI__keccak",
+      "nonfree_fold_arith": 11809800,
+      "nonfree_leaf_hash": 80640000,
+      "nonfree_merkle": 1278720000,
+      "nonfree_total": 1373627400,
+      "nonfree_transcript": 2457600,
+      "params": {
+        "fold_arity": 2,
+        "leaf_elements": 8,
+        "log_domain": 24,
+        "log_final": 6,
+        "oracles": 3,
+        "queries": 100
+      },
+      "primitives": {
+        "ext_degree": 1,
+        "field_add": 0,
+        "field_bits": 128,
+        "field_mul": 2187,
+        "hash_compression": 38400,
+        "hash_rate_bytes": 136
+      }
+    },
+    {
+      "assumptions": [
+        "M31 needs a degree-4 extension for challenge soundness; extension multiplication modelled as ~4^1.585 base multiplications.",
+        "Same query count, domain and leaf shape as the binary-field row so the only variable is the field."
+      ],
+      "garbled_bytes": 23754134400,
+      "name": "prime_field_FRI__m31_keccak",
+      "nonfree_fold_arith": 122815800,
+      "nonfree_leaf_hash": 80640000,
+      "nonfree_merkle": 1278720000,
+      "nonfree_total": 1484633400,
+      "nonfree_transcript": 2457600,
+      "params": {
+        "fold_arity": 2,
+        "leaf_elements": 8,
+        "log_domain": 24,
+        "log_final": 6,
+        "oracles": 3,
+        "queries": 100
+      },
+      "primitives": {
+        "ext_degree": 4,
+        "field_add": 95,
+        "field_bits": 31,
+        "field_mul": 2513,
+        "hash_compression": 38400,
+        "hash_rate_bytes": 136
+      }
+    },
+    {
+      "assumptions": [
+        "Same as the keccak row but with BLAKE3 as the Merkle hash. BLAKE3 costs 163 non-free gates per byte of rate versus Keccak's 282, and BitVM already has a BLAKE3 implementation in Bitcoin Script."
+      ],
+      "garbled_bytes": 6449222784,
+      "name": "binary_field_FRI__blake3",
+      "nonfree_fold_arith": 11809800,
+      "nonfree_leaf_hash": 43747200,
+      "nonfree_merkle": 346852800,
+      "nonfree_total": 403076424,
+      "nonfree_transcript": 666624,
+      "params": {
+        "fold_arity": 2,
+        "leaf_elements": 8,
+        "log_domain": 24,
+        "log_final": 6,
+        "oracles": 3,
+        "queries": 100
+      },
+      "primitives": {
+        "ext_degree": 1,
+        "field_add": 0,
+        "field_bits": 128,
+        "field_mul": 2187,
+        "hash_compression": 10416,
+        "hash_rate_bytes": 64
+      }
+    },
+    {
+      "assumptions": [
+        "THE CAUTIONARY ROW. This is what you get if you garble an off-the-shelf Plonky3/Stwo verifier without changing anything: Poseidon2 is designed to be cheap inside a prime-field SNARK, which makes it maximally expensive as a Boolean circuit.",
+        "Poseidon2 width 16 over M31: 8 full rounds x 16 S-boxes + 56 partial rounds x 1 S-box, x^5 = 3 multiplications each, priced at the measured m31_mul.",
+        "Hash cost is modelled, not measured. Everything it is built from is measured."
+      ],
+      "garbled_bytes": 789082007424,
+      "name": "prime_field_FRI__m31_poseidon2",
+      "nonfree_fold_arith": 122815800,
+      "nonfree_leaf_hash": 2913069600,
+      "nonfree_merkle": 46192960800,
+      "nonfree_total": 49317625464,
+      "nonfree_transcript": 88779264,
+      "params": {
+        "fold_arity": 2,
+        "leaf_elements": 8,
+        "log_domain": 24,
+        "log_final": 6,
+        "oracles": 3,
+        "queries": 100
+      },
+      "primitives": {
+        "ext_degree": 4,
+        "field_add": 95,
+        "field_bits": 31,
+        "field_mul": 2513,
+        "hash_compression": 1387176,
+        "hash_rate_bytes": 32
+      }
+    },
+    {
+      "assumptions": [
+        "SPECULATIVE. Substitutes a LowMC-based compression for Keccak to show the ceiling of what a garbling-friendly hash could buy. Not a security recommendation.",
+        "Rate assumed 16 B/compression, far worse than Keccak's 136 B, which partly cancels the per-compression saving. This is the honest version of the tradeoff."
+      ],
+      "garbled_bytes": 670531200,
+      "name": "binary_field_FRI__lowmc_hash",
+      "nonfree_fold_arith": 11809800,
+      "nonfree_leaf_hash": 10080000,
+      "nonfree_merkle": 19980000,
+      "nonfree_total": 41908200,
+      "nonfree_transcript": 38400,
+      "params": {
+        "fold_arity": 2,
+        "leaf_elements": 8,
+        "log_domain": 24,
+        "log_final": 6,
+        "oracles": 3,
+        "queries": 100
+      },
+      "primitives": {
+        "ext_degree": 1,
+        "field_add": 0,
+        "field_bits": 128,
+        "field_mul": 2187,
+        "hash_compression": 600,
+        "hash_rate_bytes": 16
+      }
+    }
+  ]
+}

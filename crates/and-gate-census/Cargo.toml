@@ -1,0 +1,23 @@
+[package]
+name = "and-gate-census"
+version = "0.1.0"
+edition = "2021"
+description = "Measures non-free (AND) gate counts of SNARK verifier primitives under free-XOR garbling, for BitVM3 backend comparison."
+license = "MIT"
+
+[dependencies]
+# Vendored by scripts/setup.sh. See HANDOFF.md for why this is a path dep
+# rather than a git dep (upstream has unconditional SP1 build-dependencies
+# whose build script downloads artifacts from S3).
+garbled-snark-verifier = { path = "../../vendor/garbled-snark-verifier", default-features = false }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+blake3 = "1.6"
+tiny-keccak = { version = "2.0", features = ["keccak"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

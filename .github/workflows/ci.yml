@@ -1,0 +1,18 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  exploit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: run the exploit
+        run: cd crates/garbling-attack && cargo run --release
+  paper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install tex
+        run: sudo apt-get update && sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-science
+      - name: build
+        run: cd paper && make

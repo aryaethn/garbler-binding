@@ -1,0 +1,31 @@
+{
+  "_comment": "Ground-truth anchor. Produced by garbled-snark-verifier's own example, unmodified, on the vendored copy in ../vendor. Reproduce with: cd vendor/garbled-snark-verifier && cargo run --release --no-default-features --features test-utils --example groth16_gc_gate_count -- --json",
+  "circuit": "bn254_groth16_verifier",
+  "source": "github.com/chainwayxyz/garbled-snark-verifier examples/groth16_gc_gate_count",
+  "params": { "k": 6, "constraints": 64, "compressed": false },
+  "verification_result": true,
+  "gate_count": {
+    "nonfree": 2715041234,
+    "free": 7686952943,
+    "total": 10401994177,
+    "breakdown_by_gate_type": {
+      "And": 2440123084,
+      "Nand": 145271744,
+      "Nimp": 3828288,
+      "Imp": 0,
+      "Ncimp": 2670411,
+      "Cimp": 72635872,
+      "Nor": 0,
+      "Or": 50511835,
+      "Xor": 7637037189,
+      "Xnor": 49915754,
+      "Not": 0
+    }
+  },
+  "garbled_bytes_half_gates": 43440659744,
+  "garbled_size_human": "40.46 GiB",
+  "cross_check": {
+    "bitvm3_paper_claim": "2.7e9 non-free gates, 41.2 GB",
+    "agreement": "exact on gate count; the paper's 41.2 GB uses 2.7e9 x 16 B rounded, we report 2.715e9 x 16 B = 40.46 GiB = 43.4 GB decimal"
+  }
+}

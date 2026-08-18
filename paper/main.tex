@@ -1,0 +1,554 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[expansion=false]{microtype}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+\newtheorem{attack}{Attack}
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\newtheorem{claim}{Claim}
+
+\newcommand{\Gb}{\mathsf{Gb}}
+\newcommand{\En}{\mathsf{En}}
+\newcommand{\Ev}{\mathsf{Ev}}
+\newcommand{\De}{\mathsf{De}}
+\newcommand{\lsbf}{\mathsf{lsb}}
+\newcommand{\bit}{\{0,1\}}
+\newcommand{\Hh}{H}
+
+\title{\bf Free-XOR Garbling Is Not Binding Against the Garbler\\[0.4em]
+\large What the On-Chain Label Reveal Buys in BitVM-Style Protocols}
+
+\author{Aria Naraghi\thanks{Independent. Correspondence: \texttt{arianari97@gmail.com}.
+Artifacts: \url{https://github.com/<user>/garbler-binding}}}
+
+\date{August 2026 \\[0.3em] \small Preprint. Comments welcome.}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+BitVM-style protocols move SNARK verification off the Bitcoin chain by having a
+prover garble a verifier circuit and having challengers evaluate it. Soundness
+rests on the prover being unable to make an honest evaluation accept without a
+valid witness. We observe that no standard garbling security property gives
+this: correctness, privacy and authenticity are all stated against adversaries
+who do \emph{not} hold the encoding information, and in this setting the
+adversary is the garbler, who holds all of it. Every deployed and proposed
+design closes the gap the same way, by revealing the garbled input labels
+on-chain, which is why on-chain cost is linear in the size of the proof.
+
+We isolate the missing property, which we call \emph{evaluation-binding}, and
+show it is not free. Under the native decoding of the half-gates scheme it fails
+in two trials. Under BitVM3-core's decoding commitment it is unobservable,
+because only the false output label is committed. Stated in the natural way it
+is false for a trivial reason. Repaired, its security is at most $2^{k/2}$
+rather than $2^{k}$ whenever the circuit admits an affine split reachable from
+the output, which free-XOR makes structurally likely: we give a working birthday
+attack, measured at scaling exponent $1.02$ over $k \in [24,44]$, that produces
+label vectors that encode no input yet decode to \textsc{True}.
+
+We then ask whether the circuit actually deployed has the structure. Using a
+custom evaluation mode over the BN254 Groth16 verifier of the BitVM Alliance
+implementation ($1.03 \times 10^{10}$ gates, $2.71 \times 10^{9}$ non-free,
+$3302$ input wires), we show the output's linear frontier is a single atom and
+that none of the $638{,}658$ non-free gates in the circuit's tail has separably
+controllable operands. The deployed system is therefore \emph{not} vulnerable,
+but it is safe by accident: the property that saves it is a consequence of
+Groth16's final equality check, is stated nowhere, and is not obviously
+preserved under a change of proof system. We contribute the definition, the
+attacks, an exploit, and a tool that decides the structural condition.
+\end{abstract}
+
+\section{Introduction}
+
+Bitcoin cannot verify a SNARK. A Groth16 verifier~\cite{Groth16} compiles to
+roughly a gigabyte of Bitcoin Script and a block holds four megabytes. The
+BitVM line of work~\cite{BitVM1,BitVM2,BitVM3} answers this optimistically: do
+not verify on-chain, but arrange that an incorrect claim can be
+\emph{disproved} on-chain cheaply.
+
+BitVM3~\cite{BitVM3} realises the fraud proof with garbled circuits. An operator
+garbles the SNARK verifier once, publishes the garbled circuit off-chain, and
+posts a transaction whose witness reveals the garbled encoding of its claimed
+proof. Any party may evaluate the circuit on that encoding; if the proof is
+invalid the evaluation yields a designated label $L^{*}$, and revealing $L^{*}$
+on-chain spends the operator's deposit. The reported cost is roughly \$9 total
+with a fraud proof under \$0.20, a thousandfold improvement on BitVM2.
+
+The on-chain reveal is expensive and it is the reason on-chain cost is $O(|\pi|)$
+in the proof size. Three separate lines of recent work exist to manage its
+consequences. Eagen's Glock~\cite{Glock} identifies why it works at all,
+observing that projective signatures compose with garbled input encodings in
+what he calls an ``auspicious harmony,'' and then makes the identification
+literal by \emph{defining} input labels to be signature shares. Duty-Free
+Bits~\cite{DutyFreeBits} exists because that identification forces projectivity:
+its authors state plainly that projectivity is mandated by the on-chain
+authentication mechanism. Mosaic~\cite{Mosaic} reduces the on-chain footprint so
+it no longer scales with the number of cut-and-choose copies, and opens by
+noting that the verifier needs the prover's input labels, which the prover must
+post on chain.
+
+\subsection*{The gap}
+
+What does the on-chain reveal actually buy, cryptographically?
+
+BitVM3's soundness argument answers this precisely, in its own words: a
+malicious prover posting the assertion reveals, \emph{by extractability} of the
+signature scheme, the encoding $\En(e,\pi)$; and then \emph{by correctness} of
+the garbling scheme, evaluating on that encoding reproduces the verifier's
+verdict. The second step depends on the first. Correctness of a garbling scheme
+is a statement about valid encodings and says nothing about $\Ev(F, L)$ for $L$
+outside the encoding space. Extractability is what supplies the hypothesis that
+correctness requires.
+
+So the on-chain reveal purchases exactly one thing: the guarantee that the
+labels the evaluator acts on are well-formed. Remove it and the soundness
+argument does not weaken, it loses its first line.
+
+One might hope authenticity covers the residue. It does not, and the definition
+says so. In the formulation of Zahur, Rosulek and Evans~\cite{ZRE15}, the
+authenticity adversary is given $(F, X)$ \emph{alone}: not the encoding
+information $e$, not the decoding information $d$, not the global offset $R$.
+The garbler holds all three. Authenticity is silent about the garbler by
+construction, and correctly so, since it was formulated for a different threat
+model~\cite{BHR12}.
+
+\subsection*{Contributions}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{A definition.} We isolate \emph{evaluation-binding}
+    (Definition~\ref{def:evb}): no PPT adversary holding $(F, e, d)$ can produce
+    an input label vector on which honest evaluation decodes to \textsc{True}
+    unless the circuit is satisfiable. This is the property BitVM-style
+    protocols need and obtain, today, only through the on-chain reveal. It is
+    not implied by correctness, privacy or authenticity.
+
+  \item \textbf{Five attacks} (Section~\ref{sec:attacks}). Native half-gates
+    decoding admits forgery in two expected trials. BitVM3-core commits to the
+    false output label only, making success unobservable off-chain. The
+    encoding-form statement of the property is false for a trivial free-XOR
+    reason. Even fully repaired, the property has a $2^{k/2}$ ceiling. And the
+    existing soundness proof admits no partial repair.
+
+  \item \textbf{A working exploit} (Section~\ref{sec:impl}). A faithful,
+    $k$-parameterised implementation of the half-gates scheme, validated
+    exhaustively against plaintext evaluation, in which the birthday attack
+    produces label vectors that are the encoding of \emph{no} input yet decode
+    to \textsc{True} under committed decoding. Measured scaling exponent $1.02$
+    against a birthday prediction of $1.00$, over $k \in [24,44]$; speedup over
+    naive search of $3259\times$ already at $k=28$.
+
+  \item \textbf{A measurement of the deployed circuit}
+    (Section~\ref{sec:measure}). A custom evaluation mode over the BitVM
+    Alliance BN254 Groth16 verifier~\cite{GSV} establishes that its output's
+    linear frontier is a single atom and that none of the $638{,}658$ non-free
+    gates in its tail has separably controllable operands. The attack does not
+    apply to it.
+
+  \item \textbf{A design requirement.} The deployed circuit is safe because
+    Groth16 ends in an equality check that aggregates the whole pairing result.
+    Nobody chose that. We argue evaluation-binding should become an explicit,
+    checked requirement, and we release the tool that checks it.
+\end{enumerate}
+
+We emphasise what this paper does \emph{not} claim. We do not break any deployed
+system. The deployed system is protected by the on-chain reveal, which makes
+evaluation-binding moot; and even without it, we measured the circuit and it
+resists our attack. The claim is that the guarantee is unstated, the margin is
+smaller than the parameter suggests, and the protection is incidental.
+
+\section{Preliminaries}
+
+\subsection{Garbling schemes}
+
+A garbling scheme~\cite{BHR12} is a tuple $(\Gb, \En, \Ev, \De)$. On a circuit
+$F$, $\Gb(1^{k}, F)$ outputs a garbled circuit $\hat F$, encoding information
+$e$ and decoding information $d$. $\En(e, x)$ maps a plaintext input to garbled
+input labels, $\Ev(\hat F, X)$ evaluates, and $\De(d, Y)$ decodes. We use the
+three standard properties: \emph{correctness}
+($\De(d,\Ev(\hat F,\En(e,x))) = F(x)$), \emph{privacy}, and \emph{authenticity}.
+
+Authenticity, verbatim in structure from~\cite{ZRE15}: given $(\hat F, X)$
+alone, no adversary can produce $\tilde Y \ne \Ev(\hat F, X)$ with
+$\De(d, \tilde Y) \ne \bot$ except with negligible probability. The quantifier is
+the point. The adversary receives the garbled circuit and one encoded input, and
+nothing else.
+
+\subsection{Half-gates with free-XOR}
+\label{sec:zre}
+
+We work with the half-gates scheme of~\cite{ZRE15} with the free-XOR
+optimisation of~\cite{KS08}, which is what the BitVM Alliance implementation
+uses. Writing $\Hh$ for a circular-correlation-robust hash~\cite{GKWY20}:
+
+\begin{align*}
+\Gb:\quad & R \leftarrow\!\!\text{\$}\ \bit^{k-1}1, \qquad
+            W_i^{0} \leftarrow\!\!\text{\$}\ \bit^{k}\ \text{ for inputs},\qquad
+            W_i^{1} = W_i^{0} \oplus R \\
+          & \text{XOR gate: } W_i^{0} = W_a^{0} \oplus W_b^{0}
+            \qquad\text{(no ciphertexts)} \\
+          & \text{AND gate: } (W_i^{0}, T_{Gi}, T_{Ei}) \leftarrow
+            \textsf{GbAnd}(W_a^{0}, W_b^{0}) \\
+          & \text{output: } d_i = \lsbf(W_i^{0}) \\[0.3em]
+\En:\quad & X_i = e_i \oplus x_i R \\[0.3em]
+\Ev:\quad & \text{XOR: } W_i = W_a \oplus W_b \\
+          & \text{AND: } s_a = \lsbf(W_a),\ s_b = \lsbf(W_b), \\
+          & \qquad W_{Gi} = \Hh(W_a, j) \oplus s_a T_{Gi}, \qquad
+            W_{Ei} = \Hh(W_b, j') \oplus s_b (T_{Ei} \oplus W_a), \\
+          & \qquad W_i = W_{Gi} \oplus W_{Ei} \\[0.3em]
+\De:\quad & y_i = d_i \oplus \lsbf(Y_i)
+\end{align*}
+
+Two structural facts drive everything below. First, every wire's two labels
+differ by the same global offset $R$, so any gate combining labels by XOR is
+$\mathbb{F}_2$-affine in them. Second, the scheme as published provides
+correctness and privacy but, in the authors' own statement, does not provide
+authenticity; authenticity requires a modified decoding procedure.
+
+\subsection{BitVM3-core}
+
+BitVM3-core~\cite{BitVM3} instantiates the above with $k = 128$. The prover
+garbles the SNARK verifier, publishes $\hat F$ and $d$ off-chain, and posts an
+\textsf{Assert} transaction whose witness carries one $65$-byte Schnorr adaptor
+signature per $8$-bit digit of the proof. By extractability of that signature
+scheme, any observer recovers $\En(e,\pi)$ from the chain. Writing $L^{*}$ for
+the output label decoding to \textsc{False}, the \textsf{Assert} output carries a
+hash lock on $\Hh(L^{*})$; a challenger who obtains $L^{*}$ by evaluation spends
+it and takes the deposit.
+
+Note that $\Hh(Z^{\textsc{True}})$ is never published. In the original design it
+need not be: the operator wins by the \emph{absence} of a disproof, so no party
+ever has to recognise success.
+
+\section{Evaluation-binding}
+
+\begin{definition}[Evaluation-binding]
+\label{def:evb}
+A garbling scheme $(\Gb,\En,\Ev,\De)$ is \emph{evaluation-binding} for a circuit
+$F$ if for every PPT adversary $\mathcal{A}$ given
+$(\hat F, e, d) \leftarrow \Gb(1^{k}, F)$, the probability that $\mathcal{A}$
+outputs a label vector $L$ with $\De(d, \Ev(\hat F, L)) = \textsc{True}$, when
+$F$ is unsatisfiable, is negligible.
+\end{definition}
+
+Two remarks on the shape of the definition.
+
+First, it must be stated over \emph{outcomes} and not over the form of $L$. The
+tempting statement, that $L$ must equal $\En(e,x)$ for some satisfying $x$, is
+false; see Attack~\ref{atk:cancel}.
+
+Second, the property is not new to this paper in substance. Glock~\cite{Glock}
+states its security goal as: the evaluator learns the output label \emph{if and
+only if} the garbler authenticated an input on which the circuit evaluates to
+that output. The ``only if'' direction is evaluation-binding. Every existing
+construction discharges it by the on-chain reveal rather than by proving
+anything about the garbling scheme. What is new here is the observation that the
+obligation exists, and what happens when one tries to meet it directly.
+
+\begin{observation}
+Evaluation-binding is not implied by correctness, privacy or authenticity.
+Correctness quantifies only over valid encodings. Privacy is irrelevant, and
+indeed the schemes used in this setting are deliberately privacy-free. And the
+authenticity experiment withholds $e$, $d$ and $R$ from the adversary, whereas
+the garbler holds all three.
+\end{observation}
+
+\section{Attacks}
+\label{sec:attacks}
+
+\begin{attack}[Native decoding admits trivial forgery]
+\label{atk:lsb}
+Under the decoding of Section~\ref{sec:zre}, $\De(d, Y) = d \oplus \lsbf(Y)$ is
+a single XOR against one bit of the label. Every $k$-bit string decodes to a
+valid output bit; there is no $\bot$. A malicious garbler therefore samples
+arbitrary $L$, evaluates locally, and resamples if the result decodes to
+\textsc{False}. The expected number of trials is two.
+\end{attack}
+
+Our implementation forges in $1$, $1$ and $3$ trials at $k = 32, 64, 128$
+respectively. The repair is standard~\cite{ZRE15}: commit to both output labels,
+$d = (\Hh(Z^{0}), \Hh(Z^{1}))$, and return $\bot$ on a mismatch. All subsequent
+attacks assume this repair.
+
+\begin{attack}[One-sided decoding commitment]
+\label{atk:onesided}
+BitVM3-core publishes $\Hh(L^{*})$ and not $\Hh(Z^{\textsc{True}})$. A party
+evaluating off-chain can therefore recognise failure and nothing else:
+\textsc{True} and garbage are the same observation. Any protocol that asks a
+challenger to act on a successful evaluation is unimplementable as specified.
+\end{attack}
+
+The repair is $32$ bytes at setup. We flag it because it is invisible while the
+on-chain reveal is present, and becomes load-bearing the moment it is removed.
+
+\begin{attack}[Encoding-form binding is false]
+\label{atk:cancel}
+Let $S$ be any set of input wires whose parity into every application of $\Hh$
+is even; two wires meeting at a common XOR gate suffice. For any
+$\rho \notin \{0, R\}$ set $L_m = W_m^{0} \oplus \rho$ for $m \in S$ and
+$L_m = W_m^{x_m}$ otherwise. The $\rho$ cancels at the XOR, no hash is ever
+applied to a perturbed label, and the evaluation is bit-identical to the honest
+one. Thus $L$ is not $\En(e,x)$ for any $x$, yet decoding succeeds.
+\end{attack}
+
+This does not help a cheating prover on its own. It matters because it fixes the
+shape of Definition~\ref{def:evb}, and because the mechanism it exposes, free-XOR
+rendering regions of the circuit $\mathbb{F}_2$-affine in the labels, is what the
+next attack exploits.
+
+\begin{attack}[Birthday attack: the $2^{k/2}$ ceiling]
+\label{atk:birthday}
+Suppose the output label can be written $Z = g(L_S) \oplus h(L_T)$ for disjoint
+input-wire sets $S, T$, which holds whenever the paths from $S$ and from $T$
+merge only through XOR gates after their last application of $\Hh$. Then:
+tabulate $g(L_S)$ over $2^{k/2}$ garbage assignments to $L_S$; sweep $2^{k/2}$
+garbage assignments to $L_T$ looking up $Z^{\textsc{True}} \oplus h(L_T)$. A
+collision is expected and yields $L$ with $\Ev(\hat F, L) = Z^{\textsc{True}}$.
+\end{attack}
+
+Modelling $\Hh$ as a random oracle, an unstructured search for the target costs
+$2^{k}$. The split reduces it to $2^{k/2}$, and van Oorschot--Wiener parallel
+collision search~\cite{vOW99} makes that memory-light and perfectly
+parallelisable. For the deployed parameter $k=128$ the ceiling is $2^{64}$.
+
+At $10^{9}$ hash evaluations per core-second, $2^{64}$ is roughly $585$
+core-years, or about three weeks on $10{,}000$ cores. Whether that is alarming
+depends on the value secured; Clementine~\cite{Clementine} has processed on the
+order of $150$~BTC.
+
+\begin{attack}[No partial repair to the soundness proof]
+\label{atk:proof}
+BitVM3's soundness proof derives $L_\pi = \En(e,\pi)$ from extractability and
+only then applies correctness. Removing the on-chain reveal deletes the premise
+of the second step rather than weakening its conclusion. There is no
+intermediate position in which a weaker on-chain reveal yields a weaker but
+still sufficient guarantee.
+\end{attack}
+
+\section{Implementation}
+\label{sec:impl}
+
+We implement the half-gates scheme of Section~\ref{sec:zre} in Rust,
+parameterised by label length $k$, following~\cite{ZRE15} Figure~2 line by line.
+We do not use the BitVM Alliance implementation~\cite{GSV} here because it fixes
+$k = 128$, placing Attack~\ref{atk:birthday} beyond demonstration. Before any
+attack runs, the garbling is validated exhaustively against plaintext evaluation
+on every input of every test circuit at $k \in \{16,32,64,128\}$.
+
+The test circuit for Attack~\ref{atk:birthday} is
+$\textsf{out} = (a \wedge b) \oplus (c \wedge d)$: two AND gates and four
+inputs, the minimal circuit exhibiting the split. We hold $L_b, L_d$ at honest
+labels and vary $L_a, L_c$ over garbage.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{rrrrcc}
+\toprule
+$k$ & $\Hh$ evaluations & $2^{k/2}$ & $2^{k}$ & no valid encoding & decodes \\
+\midrule
+24 & $20{,}722$ & $4.10\!\times\!10^{3}$ & $1.68\!\times\!10^{7}$ & yes & \textsc{True} \\
+28 & $105{,}924$ & $1.64\!\times\!10^{4}$ & $2.68\!\times\!10^{8}$ & yes & \textsc{True} \\
+32 & $280{,}360$ & $6.55\!\times\!10^{4}$ & $4.29\!\times\!10^{9}$ & yes & \textsc{True} \\
+36 & $1{,}170{,}344$ & $2.62\!\times\!10^{5}$ & $6.87\!\times\!10^{10}$ & yes & \textsc{True} \\
+40 & $4{,}349{,}874$ & $1.05\!\times\!10^{6}$ & $1.10\!\times\!10^{12}$ & yes & \textsc{True} \\
+44 & $24{,}420{,}688$ & $4.19\!\times\!10^{6}$ & $1.76\!\times\!10^{13}$ & yes & \textsc{True} \\
+\bottomrule
+\end{tabular}
+\caption{Attack~\ref{atk:birthday}, measured. ``No valid encoding'' is an
+exhaustive check that the forged vector equals $\En(e,x)$ for none of the $2^{n}$
+inputs. Decoding uses the committed variant, so \textsc{True} means the
+evaluation landed exactly on $Z^{\textsc{True}}$.}
+\label{tab:birthday}
+\end{table}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{rrrr}
+\toprule
+$k$ & birthday $\Hh$ evals & naive $\Hh$ evals & speedup \\
+\midrule
+20 & $5{,}702$ & $1{,}160{,}196$ & $203\times$ \\
+24 & $20{,}722$ & $36{,}204{,}000$ & $1{,}747\times$ \\
+28 & $105{,}924$ & $345{,}161{,}504$ & $3{,}259\times$ \\
+\bottomrule
+\end{tabular}
+\caption{Head to head against unstructured search for the same target at the
+same $k$. The speedup itself grows as $2^{k/2}$.}
+\label{tab:headtohead}
+\end{table}
+
+Table~\ref{tab:birthday} reports the attack, Table~\ref{tab:headtohead} the
+comparison against unstructured search. Fitting the measured work against $k$
+over $[24,44]$ gives a scaling exponent of $\mathbf{1.02}$, against $1.00$
+predicted by the birthday bound. Every row of Table~\ref{tab:birthday} is a
+label vector that is the encoding of no input whatsoever and which an honest
+evaluator accepts as a proof of \textsc{True}.
+
+\section{Does the deployed circuit have the structure?}
+\label{sec:measure}
+
+Attack~\ref{atk:birthday} needs a split. Section~\ref{sec:impl} demonstrates it
+on a circuit built to have one. This section asks whether the circuit BitVM3-core
+actually garbles has one.
+
+\subsection{Method}
+
+We implement a custom evaluation mode for the BitVM Alliance streaming circuit
+builder~\cite{GSV} and run the real \texttt{groth16\_verify} circuit end to end.
+Each wire carries two pieces of information.
+
+\emph{A dependency sketch.} Input wire $i$ is seeded with bit $i \bmod 64$ and
+every gate ORs its operands, so a wire's sketch records which of $64$ residue
+classes of input wires it depends on.
+
+\emph{A recorded tail.} The last $2^{21}$ gates are kept with their wire
+identifiers and sketches, which lets the \emph{linear frontier} of the output be
+reconstructed exactly offline: from the output wire, step back through free
+gates only, stopping at non-free gates or circuit inputs, with even-parity atoms
+cancelling as the label algebra requires. The output label is the XOR of its
+frontier atoms' labels, so a split at the output exists only if the frontier has
+at least two atoms with separable dependencies.
+
+\subsection{Results}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lr}
+\toprule
+input wires & $3{,}302$ \\
+gates executed & $10{,}338{,}696{,}819$ \\
+non-free gates & $2{,}714{,}835{,}821$ \\
+output sketch popcount & $64/64$ \\
+\midrule
+backward steps through free gates & $1$ \\
+frontier atoms (odd parity) & $\mathbf{1}$ \\
+unresolved wires & $0$ \\
+\midrule
+top gate operand A / B popcount & $64/64$, $64/64$ \\
+mutually exclusive residue classes & none \\
+\midrule
+non-free gates in recorded tail & $638{,}658$ \\
+\quad with separably controllable operands & $\mathbf{0}$ \\
+\bottomrule
+\end{tabular}
+\caption{One full pass over the BN254 Groth16 verifier circuit.}
+\label{tab:measure}
+\end{table}
+
+Table~\ref{tab:measure} gives the result. Three findings of differing strength.
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Exact.} The output's linear frontier is a single atom. The
+    backward walk terminated after one step with nothing unresolved, so the
+    output wire is produced directly by a non-free gate with no XOR above it.
+    The top-level decomposition Attack~\ref{atk:birthday} requires does not
+    exist. This is not statistical.
+  \item \textbf{Evidence.} The top non-free gate's operands each depend on
+    inputs from all $64$ residue classes with no mutually exclusive class, so
+    they are not separably controllable at this resolution.
+  \item \textbf{Evidence.} Across the $638{,}658$ non-free gates in the last
+    $2^{21}$ gates of the circuit, none has separably controllable operands.
+\end{enumerate}
+
+\begin{claim}
+Attack~\ref{atk:birthday} does not apply to the deployed BN254 Groth16 verifier
+circuit.
+\end{claim}
+
+The reason is structural: the Groth16 verifier terminates in an equality check
+over the whole final-exponentiation result, so every wire near the output
+depends on essentially every input and there is nothing to vary independently.
+
+\subsection{Scope}
+
+The recorded tail is $2^{21}$ of $1.03 \times 10^{10}$ gates, the last
+$0.02\%$. Finding~1 is exact and unconditional. Findings~2 and~3 hold at
+$64$-class resolution, and two cones could in principle be disjoint while both
+touching all $64$ classes; an exact analysis would carry a $3302$-bit set per
+live wire, roughly $66$~MB resident, and is future work. Separately, our
+non-free gate count of $2{,}714{,}835{,}821$ differs from the upstream gate
+counter's $2{,}715{,}041{,}234$ by $205{,}413$, which we believe to be gates
+whose output wire is unreachable and which the upstream counter includes; this
+is unverified.
+
+\section{Discussion}
+
+\subsection{From break to design requirement}
+
+The deployed circuit satisfies the structural condition, and no one chose that.
+It follows from Groth16's output convention, not from a decision. It is not
+obviously preserved under a change of proof system, a change of circuit
+compiler, or a change of output encoding. A hash-based verifier terminating in
+an XOR-tree accumulator, which is where the post-quantum direction for these
+protocols points, is a natural place for it to fail.
+
+We therefore propose that evaluation-binding, and the structural condition that
+supports it, be stated and checked rather than inherited. The tool accompanying
+this paper decides the condition in one pass over the circuit.
+
+\subsection{Is $k = 128$ the right parameter here?}
+
+The $128$-bit label length is inherited from two-party computation, where the
+garbler cannot choose the evaluator's input. BitVM-style protocols are not that
+setting whenever labels reach an evaluator without on-chain authentication. If
+Attack~\ref{atk:birthday} applies to some future circuit, restoring $128$-bit
+security requires $k = 256$, which doubles the garbled circuit. For the
+verifier measured here that is $40.5$~GB becoming $81$~GB, in a design where
+off-chain size is the binding constraint. The parameter deserves explicit
+justification in this setting rather than inheritance.
+
+\subsection{Relation to prior attacks}
+
+Futoransky, Larotonda and Barbara~\cite{FairgateNote} broke an earlier
+RSA-based garbling proposal for this same application with a circuit containing
+two AND gates. Their attack is evaluator-side and exploits multiplicative
+structure in $\mathbb{Z}_N$, which half-gates with a correlation-robust hash
+does not have, so it does not transfer. The shape is instructive nonetheless:
+in both cases the claim is that a party cannot produce labels it should not be
+able to produce, the intuition was that structure made it hard, and the
+structure was exploitable.
+
+\section{Open problems}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Prove or refute evaluation-binding for half-gates under circular
+    correlation robustness~\cite{GKWY20}, for circuits satisfying the structural
+    condition. Attack~\ref{atk:birthday} bounds what any such proof can achieve
+    at $2^{k/2}$ in general.
+  \item Give a decision procedure for the structural condition that is exact
+    rather than sketch-based, and cheap enough to run in continuous integration.
+  \item Characterise which circuit output conventions guarantee the condition by
+    construction, so that it can be enforced by the compiler rather than audited
+    after the fact.
+  \item Determine whether arithmetic garbling schemes
+    (\cite{Glock,DutyFreeBits}) admit an analogous garbler-side binding gap, and
+    whether their algebraic structure makes it easier or harder to exploit.
+\end{enumerate}
+
+\section*{Artifacts}
+
+All code and measurements are available at
+\url{https://github.com/<user>/garbler-binding}. The exploit is a single Rust
+file with one dependency and runs in about ten seconds. The circuit analysis
+requires one pass over the BN254 Groth16 verifier, roughly ten minutes on a
+laptop core.
+
+\section*{Acknowledgements}
+
+This work was carried out with substantial assistance from Claude (Anthropic)
+for literature reconciliation, implementation and analysis.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
